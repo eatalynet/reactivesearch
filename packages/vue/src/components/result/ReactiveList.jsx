@@ -63,6 +63,7 @@ const ReactiveList = {
 	created() {
 		// no support for pagination and aggregationField together
 		if (this.pagination && this.aggregationField) {
+			// TODO: verify if aggregationField is not compliant also with continuous pagination
 			console.warn(
 				'Pagination is not supported when aggregationField is present. The list will be rendered with infinite scroll',
 			);
@@ -100,7 +101,7 @@ const ReactiveList = {
 		renderError: types.title,
 		renderResultStats: types.func,
 		pages: VueTypes.number.def(5),
-		pagination: VueTypes.bool.def(false),
+		pagination: types.pagination.def(false),
 		paginationAt: types.paginationAt.def('bottom'),
 		react: types.react,
 		showResultStats: VueTypes.bool.def(true),
@@ -113,7 +114,10 @@ const ReactiveList = {
 	},
 	computed: {
 		shouldRenderPagination() {
-			return this.pagination && !this.aggregationField;
+			return this.pagination && !this.aggregationField && !this.isContinuousPagination;
+		},
+		isContinuousPagination() {
+			return this.pagination === 'continuous';
 		},
 		totalPages() {
 			return Math.ceil(this.total / this.$props.size) || 0;
@@ -354,7 +358,7 @@ const ReactiveList = {
 
 		this.setReact(this.$props);
 
-		if (!this.shouldRenderPagination) {
+		if (!this.shouldRenderPagination && !this.isContinuousPagination) {
 			window.addEventListener('scroll', this.scrollHandler);
 		}
 
