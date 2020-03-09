@@ -16,7 +16,9 @@
 				:currentPage="customPage"
 			>
 
-        <button slot="loadPrev" slot-scope="{ loadPrev }" @click="loadPrev">Load Prev</button>
+        <button slot="loadPrev" slot-scope="{ load, isLoading }" @click="load" :disabled="isLoading">
+          {{ isLoading ? 'Loading...' : 'Load Prev' }}
+        </button>
 
 				<div class="item" slot="renderItem" slot-scope="{ item }">
 					<div class="flex book-content" key="item._id">
@@ -24,7 +26,9 @@
 					</div>
 				</div>
 
-        <button slot="loadNext" slot-scope="{ loadNext }" @click="loadNext">Load Next</button>
+        <button slot="loadNext" slot-scope="{ load, isLoading }" @click="load" :disabled="isLoading">
+          {{ isLoading ? 'Loading...' : 'Load Next' }}
+        </button>
 
 			</ReactiveList>
 		</ReactiveBase>
