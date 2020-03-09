@@ -57,6 +57,8 @@ const ReactiveList = {
 			from: $currentPage * props.size,
 			fromNext: $currentPage * props.size,
 			isLoading: true,
+			isLoadingPrev: false, // Only for continuous pagination
+			isLoadingNext: false, // Only for continuous pagination
 			$currentPage,
 		};
 		return this.__state;
@@ -265,6 +267,11 @@ const ReactiveList = {
 			} else if ((!oldVal || !oldVal.length) && newVal) {
 				this.isLoading = false;
 			}
+			// Reset isLoadingPrev/Next for continuous pagination
+			if (this.isContinuousPagination && oldVal && oldVal.length && newVal && newVal.length) {
+				// TODO: maybe is better/safer to compare [0]._id?
+				this[oldVal[0] === newVal[0] ? 'isLoadingNext' : 'isLoadingPrev'] = false;
+			}
 		},
 		total(newVal, oldVal) {
 			if (this.shouldRenderPagination && newVal !== oldVal) {
@@ -428,8 +435,11 @@ const ReactiveList = {
 
 				{/* TODO: missing is loading condition? */}
 				{this.isContinuousPagination && this.continuousExistsPrev ? (
-					this.$scopedSlots.loadPrev ? this.$scopedSlots.loadPrev({ loadPrev: this.continuousLoadPrev })
-						: <button onClick={ this.continuousLoadPrev }>prev</button>
+					this.$scopedSlots.loadPrev
+						? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
+						: <button onClick={ this.continuousLoadPrev } disabled={ this.isLoadingPrev }>
+							{this.isLoadingPrev ? 'loading...' : 'prev'}
+						</button>
 					) : null}
 
 				{this.hasCustomRender ? (
@@ -477,8 +487,11 @@ const ReactiveList = {
 
 				{/* TODO: missing is loading condition? */}
 				{this.isContinuousPagination && this.continuousExistsNext ? (
-					this.$scopedSlots.loadNext ? this.$scopedSlots.loadNext({ loadNext: this.continuousLoadNext })
-						: <button onClick={ this.continuousLoadNext }>next</button>
+					this.$scopedSlots.loadNext
+						? this.$scopedSlots.loadNext({ load: this.continuousLoadNext, isLoading: this.isLoadingNext })
+						: <button onClick={ this.continuousLoadNext } disabled={ this.isLoadingNext }>
+							{this.isLoadingNext ? 'loading...' : 'next'}
+						</button>
 				) : null}
 
 
@@ -589,6 +602,7 @@ const ReactiveList = {
 		// Quite redundant with loadMore(), but kept separate for smoother update/merge
 		continuousLoadMore(direction = 'next') {
 			if (!this.isContinuousPagination || (this.aggregationField && !this.afterKey)) return;
+			const loadingName = direction === 'next' ? 'isLoadingNext' : 'isLoadingPrev';
 			if (this.hits && !this.shouldRenderPagination && (
 				(direction === 'next' && this.continuousExistsNext) ||
 				(direction !== 'next' && this.continuousExistsPrev)
@@ -598,7 +612,7 @@ const ReactiveList = {
 					: this.$data.from - this.$props.size;
 				const options = { ...getQueryOptions(this.$props), ...this.getAggsQuery() };
 				this[direction === 'next' ? 'fromNext' : 'from'] = value;
-				this.isLoading = true;
+				this[loadingName] = true;
 				this.loadMoreAction(
 					this.$props.componentId,
 					{
@@ -609,8 +623,8 @@ const ReactiveList = {
 					!!this.aggregationField,
 					direction !== 'next', // prepend
 				);
-			} else if (this.isLoading) {
-				this.isLoading = false;
+			} else if (this[loadingName]) {
+				this[loadingName] = false;
 			}
 		},
 
