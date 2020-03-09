@@ -1,6 +1,6 @@
 [submodule "packages/reactivecore"]
 	path = packages/reactivecore
-	url = https://github.com/appbaseio/reactivecore.git
+	url = git@github.com:eatalynet/reactivecore.git
 	branch = master
 [submodule "packages/playground"]
 	path = packages/playground
