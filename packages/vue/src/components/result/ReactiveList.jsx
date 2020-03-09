@@ -55,6 +55,7 @@ const ReactiveList = {
 
 		this.__state = {
 			from: $currentPage * props.size,
+			fromNext: $currentPage * props.size,
 			isLoading: true,
 			$currentPage,
 		};
@@ -71,6 +72,7 @@ const ReactiveList = {
 		if (this.defaultPage >= 0) {
 			this.$currentPage = this.defaultPage;
 			this.from = this.$currentPage * this.$props.size;
+			this.fromNext = this.from;
 		}
 		this.isLoading = true;
 		this.internalComponent = `${this.$props.componentId}__internal`;
@@ -139,6 +141,12 @@ const ReactiveList = {
 		},
 		hasCustomRender() {
 			return hasCustomRenderer(this);
+		},
+		continuousExistsPrev() {
+			return this.from > 0;
+		},
+		continuousExistsNext() {
+			return this.$data.fromNext + this.$props.size <= this.total;
 		},
 	},
 	watch: {
@@ -417,6 +425,13 @@ const ReactiveList = {
 							innerClass={this.$props.innerClass}
 						/>
 					) : null}
+
+				{/* TODO: missing is loading condition? */}
+				{this.isContinuousPagination && this.continuousExistsPrev ? (
+					this.$scopedSlots.loadPrev ? this.$scopedSlots.loadPrev({ loadPrev: this.continuousLoadPrev })
+						: <button onClick={ this.continuousLoadPrev }>prev</button>
+					) : null}
+
 				{this.hasCustomRender ? (
 					this.getComponent()
 				) : (
@@ -459,6 +474,14 @@ const ReactiveList = {
 							innerClass={this.$props.innerClass}
 						/>
 					) : null}
+
+				{/* TODO: missing is loading condition? */}
+				{this.isContinuousPagination && this.continuousExistsNext ? (
+					this.$scopedSlots.loadNext ? this.$scopedSlots.loadNext({ loadNext: this.continuousLoadNext })
+						: <button onClick={ this.continuousLoadNext }>next</button>
+				) : null}
+
+
 				{this.config.url.endsWith('appbase.io') && results.length ? (
 					<Flex
 						direction="row-reverse"
@@ -562,6 +585,43 @@ const ReactiveList = {
 				this.isLoading = false;
 			}
 		},
+
+		// Quite redundant with loadMore(), but kept separate for smoother update/merge
+		continuousLoadMore(direction = 'next') {
+			if (!this.isContinuousPagination || (this.aggregationField && !this.afterKey)) return;
+			if (this.hits && !this.shouldRenderPagination && (
+				(direction === 'next' && this.continuousExistsNext) ||
+				(direction !== 'next' && this.continuousExistsPrev)
+			)) {
+				const value = direction === 'next'
+					? this.$data.fromNext + this.$props.size
+					: this.$data.from - this.$props.size;
+				const options = { ...getQueryOptions(this.$props), ...this.getAggsQuery() };
+				this[direction === 'next' ? 'fromNext' : 'from'] = value;
+				this.isLoading = true;
+				this.loadMoreAction(
+					this.$props.componentId,
+					{
+						...options,
+						from: value,
+					},
+					direction === 'next', // append
+					!!this.aggregationField,
+					direction !== 'next', // prepend
+				);
+			} else if (this.isLoading) {
+				this.isLoading = false;
+			}
+		},
+
+		continuousLoadPrev() {
+			this.continuousLoadMore('prev');
+		},
+
+		continuousLoadNext() {
+			this.continuousLoadMore('next');
+		},
+
 		setPage(page) {
 			// pageClick will be called every time a pagination button is clicked
 			if (page !== this.$currentPage) {
