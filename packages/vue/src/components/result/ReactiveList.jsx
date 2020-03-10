@@ -115,6 +115,7 @@ const ReactiveList = {
 		sortOptions: types.sortOptions,
 		stream: types.bool,
 		URLParams: VueTypes.bool.def(false),
+		URLPageParam: types.string.def(''),
 	},
 	computed: {
 		shouldRenderPagination() {
@@ -623,6 +624,17 @@ const ReactiveList = {
 					!!this.aggregationField,
 					direction !== 'next', // prepend
 				);
+				// Set page in URL (TODO: move on hits change?)
+				if (this.$props.URLParams && direction === 'next') {
+					this.setPageURL(
+						this.$props.URLPageParam || this.$props.componentId,
+						Math.ceil(value / this.$props.size) + 1,
+						this.$props.URLPageParam || this.$props.componentId,
+						false,
+						true,
+					);
+				}
+
 			} else if (this[loadingName]) {
 				this[loadingName] = false;
 			}
@@ -657,9 +669,9 @@ const ReactiveList = {
 
 				if (this.$props.URLParams) {
 					this.setPageURL(
-						this.$props.componentId,
+						this.$props.URLPageParam || this.$props.componentId,
 						page + 1,
-						this.$props.componentId,
+						this.$props.URLPageParam || this.$props.componentId,
 						false,
 						true,
 					);
@@ -820,8 +832,8 @@ const ReactiveList = {
 };
 const mapStateToProps = (state, props) => ({
 	defaultPage:
-		(state.selectedValues[props.componentId]
-			&& state.selectedValues[props.componentId].value - 1)
+		(state.selectedValues[props.URLPageParam || props.componentId]
+			&& state.selectedValues[props.URLPageParam || props.componentId].value - 1)
 		|| -1,
 	hits: state.hits[props.componentId] && state.hits[props.componentId].hits,
 	aggregationData: state.compositeAggregations[props.componentId] || [],
