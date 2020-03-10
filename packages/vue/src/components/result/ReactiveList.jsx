@@ -270,10 +270,18 @@ const ReactiveList = {
 			} else if ((!oldVal || !oldVal.length) && newVal) {
 				this.isLoading = false;
 			}
-			// Reset isLoadingPrev/Next for continuous pagination
+			// Continuous pagination
 			if (this.isContinuousPagination && oldVal && oldVal.length && newVal && newVal.length) {
 				// TODO: maybe is better/safer to compare [0]._id?
-				this[oldVal[0] === newVal[0] ? 'isLoadingNext' : 'isLoadingPrev'] = false;
+				const direction = oldVal[0] === newVal[0] ? 'next' : 'prev';
+				// Reset isLoadingPrev/Next
+				this[direction === 'next' ? 'isLoadingNext' : 'isLoadingPrev'] = false;
+				// Emit pageAdd, use $nextTick so DOM is already updated
+				const fromDirection = this[direction === 'next' ? 'fromNext' : 'from'];
+				const lastAddedPage = Math.ceil(fromDirection / this.$props.size) + 1;
+				this.$nextTick(function() {
+					this.$emit('pageAdd', direction, lastAddedPage, this.totalPages);
+				});
 			}
 		},
 		total(newVal, oldVal) {
