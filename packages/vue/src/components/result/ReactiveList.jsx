@@ -144,11 +144,13 @@ const ReactiveList = {
 		hasCustomRender() {
 			return hasCustomRenderer(this);
 		},
-		continuousExistsPrev() {
-			return this.from > 0;
+		continuousShowLoadPrev() {
+			// TODO: test isLoading instead of hits?
+			return this.hits && this.from > 0;
 		},
-		continuousExistsNext() {
-			return this.$data.fromNext + this.$props.size <= this.total;
+		continuousShowLoadNext() {
+			// TODO: test isLoading instead of hits?
+			return this.hits && this.$data.fromNext + this.$props.size <= this.total;
 		},
 	},
 	watch: {
@@ -433,8 +435,7 @@ const ReactiveList = {
 						/>
 					) : null}
 
-				{/* TODO: missing is loading condition? */}
-				{this.isContinuousPagination && this.continuousExistsPrev ? (
+				{this.isContinuousPagination && this.continuousShowLoadPrev ? (
 					this.$scopedSlots.loadPrev
 						? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
 						: <button onClick={ this.continuousLoadPrev } disabled={ this.isLoadingPrev }>
@@ -485,8 +486,7 @@ const ReactiveList = {
 						/>
 					) : null}
 
-				{/* TODO: missing is loading condition? */}
-				{this.isContinuousPagination && this.continuousExistsNext ? (
+				{this.isContinuousPagination && this.continuousShowLoadNext ? (
 					this.$scopedSlots.loadNext
 						? this.$scopedSlots.loadNext({ load: this.continuousLoadNext, isLoading: this.isLoadingNext })
 						: <button onClick={ this.continuousLoadNext } disabled={ this.isLoadingNext }>
@@ -604,8 +604,8 @@ const ReactiveList = {
 			if (!this.isContinuousPagination || (this.aggregationField && !this.afterKey)) return;
 			const loadingName = direction === 'next' ? 'isLoadingNext' : 'isLoadingPrev';
 			if (this.hits && !this.shouldRenderPagination && (
-				(direction === 'next' && this.continuousExistsNext) ||
-				(direction !== 'next' && this.continuousExistsPrev)
+				(direction === 'next' && this.continuousShowLoadNext) ||
+				(direction !== 'next' && this.continuousShowLoadPrev)
 			)) {
 				const value = direction === 'next'
 					? this.$data.fromNext + this.$props.size
