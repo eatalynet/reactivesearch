@@ -271,7 +271,10 @@ const ReactiveList = {
 				this.isLoading = false;
 			}
 			// Continuous pagination
-			if (this.isContinuousPagination && oldVal && oldVal.length && newVal && newVal.length) {
+			if (
+				this.isContinuousPagination && oldVal && oldVal.length && newVal && newVal.length
+				&& (this.isLoadingPrev || this.isLoadingNext)
+			) {
 				// TODO: maybe is better/safer to compare [0]._id?
 				const direction = oldVal[0] === newVal[0] ? 'next' : 'prev';
 				// Reset isLoadingPrev/Next
