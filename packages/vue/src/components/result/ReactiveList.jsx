@@ -186,7 +186,7 @@ const ReactiveList = {
 			}
 		},
 		defaultQuery(newVal, oldVal) {
-			if (newVal && !isEqual(newVal(), oldVal)) {
+			if (newVal && !isEqual(newVal(), oldVal())) {
 				let options = getQueryOptions(this.$props);
 				options.from = 0;
 				this.$defaultQuery = newVal();
