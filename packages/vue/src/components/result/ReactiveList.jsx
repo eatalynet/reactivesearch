@@ -115,7 +115,7 @@ const ReactiveList = {
 		sortOptions: types.sortOptions,
 		stream: types.bool,
 		URLParams: VueTypes.bool.def(false),
-		URLPageParam: types.string.def(''),
+		URLPageParam: types.string.def(''), // N.B. DO NOT works with SSR!!! Is overwritten by initReactivesearch()
 	},
 	computed: {
 		shouldRenderPagination() {
