@@ -79,6 +79,17 @@ const ReactiveList = {
 		this.isLoading = true;
 		this.internalComponent = `${this.$props.componentId}__internal`;
 		const onQueryChange = (...args) => {
+			const [oldQuery, newQuery] = args;
+			if (
+				this.isContinuousPagination && oldQuery && newQuery
+				&& !isEqual(oldQuery.query, newQuery.query)
+			) {
+				// Query has changed (i.e. applied some filter to another component), reset to first page.
+				// N.B. from in Redux state is already reset to 0 at mount, anyway here is too late to
+				// update it via setQueryOptions(). The other approach is to set newQuery.from directly
+				// here, but quite dirty, query args here should be read-only.
+				this.resetToFirstPage();
+			}
 			this.$emit('queryChange', ...args);
 		};
 		const onError = e => {
@@ -387,6 +398,13 @@ const ReactiveList = {
 
 		this.setReact(this.$props);
 
+		// Reset from in Redux to 0, so a query change can reset pagination (see onQueryChange() above)
+		this.setQueryOptions(
+			this.$props.componentId,
+			{ ...options, ...this.getAggsQuery(), from: 0 },
+			false,
+		);
+
 		if (!this.shouldRenderPagination && !this.isContinuousPagination) {
 			window.addEventListener('scroll', this.scrollHandler);
 		}
@@ -657,6 +675,19 @@ const ReactiveList = {
 
 		continuousLoadNext() {
 			this.continuousLoadMore('next');
+		},
+
+		resetToFirstPage() {
+			this.$currentPage = 0;
+			this.from = this.$currentPage * this.$props.size;
+			this.fromNext = this.from;
+			this.setPageURL(
+				this.$props.URLPageParam || this.$props.componentId,
+				null,
+				this.$props.URLPageParam || this.$props.componentId,
+				false,
+				true,
+			);
 		},
 
 		setPage(page) {
