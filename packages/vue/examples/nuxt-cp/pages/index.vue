@@ -57,7 +57,6 @@ export default {
 		return {
       size: 10,
       pagination: 'continuous',
-      // */
 		}
 	},
   methods: {
