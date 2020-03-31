@@ -272,7 +272,9 @@ const ReactiveList = {
 				if (oldVal.length !== newVal.length || newVal.length === this.$props.total) {
 					this.isLoading = false;
 
-					if (newVal.length < oldVal.length) {
+					// Continuous pagination bypass this part! Purpose is not clear,
+					// "integrated" scroll not wanted and page reset on query changed already managed.
+					if (!this.isContinuousPagination && newVal.length < oldVal.length) {
 						// query has changed
 						window.scrollTo(0, 0);
 						this.from = 0;
