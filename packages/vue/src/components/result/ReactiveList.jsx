@@ -467,13 +467,15 @@ const ReactiveList = {
 						/>
 					) : null}
 
-				{this.isContinuousPagination && this.continuousShowLoadPrev ? (
-					this.$scopedSlots.loadPrev
-						? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
-						: <button onClick={ this.continuousLoadPrev } disabled={ this.isLoadingPrev }>
-							{this.isLoadingPrev ? 'loading...' : 'prev'}
-						</button>
-					) : null}
+				{this.isContinuousPagination ? (
+					this.continuousShowLoadPrev ? (
+						this.$scopedSlots.loadPrev
+							? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
+							: <button onClick={ this.continuousLoadPrev } disabled={ this.isLoadingPrev }>
+								{this.isLoadingPrev ? 'loading...' : 'prev'}
+							</button>
+					) : (this.$scopedSlots.firstPageLoadAlt ? this.$scopedSlots.firstPageLoadAlt() : null)
+				) : null}
 
 				{this.hasCustomRender ? (
 					this.getComponent()
