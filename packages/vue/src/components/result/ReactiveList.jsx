@@ -692,6 +692,7 @@ const ReactiveList = {
 				false,
 				true,
 			);
+			this.$emit('resetToFirstPage');
 		},
 
 		setPage(page) {
