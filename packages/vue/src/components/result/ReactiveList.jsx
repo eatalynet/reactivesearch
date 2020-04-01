@@ -471,7 +471,7 @@ const ReactiveList = {
 					this.continuousShowLoadPrev ? (
 						this.$scopedSlots.loadPrev
 							? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
-							: <button onClick={ this.continuousLoadPrev } disabled={ this.isLoadingPrev }>
+							: <button onClick={this.continuousLoadPrev} disabled={this.isLoadingPrev}>
 								{this.isLoadingPrev ? 'loading...' : 'prev'}
 							</button>
 					) : (this.$scopedSlots.firstPageLoadAlt ? this.$scopedSlots.firstPageLoadAlt() : null)
@@ -523,7 +523,7 @@ const ReactiveList = {
 				{this.isContinuousPagination && this.continuousShowLoadNext ? (
 					this.$scopedSlots.loadNext
 						? this.$scopedSlots.loadNext({ load: this.continuousLoadNext, isLoading: this.isLoadingNext })
-						: <button onClick={ this.continuousLoadNext } disabled={ this.isLoadingNext }>
+						: <button onClick={this.continuousLoadNext} disabled={this.isLoadingNext}>
 							{this.isLoadingNext ? 'loading...' : 'next'}
 						</button>
 				) : null}
