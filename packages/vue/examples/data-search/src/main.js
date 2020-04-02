@@ -1,6 +1,6 @@
 import Vue from "vue";
 import App from "./App.vue";
-import VueRs from "@appbaseio/reactivesearch-vue";
+import VueRs from "@eatalynet/reactivesearch-vue";
 
 Vue.use(VueRs);
 Vue.config.productionTip = false;

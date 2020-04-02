@@ -1,4 +1,4 @@
-import { Actions, helper } from '@appbaseio/reactivecore';
+import { Actions, helper } from '@eatalynet/reactivecore';
 import types from '../../utils/vueTypes';
 import Title from '../../styles/Title';
 import Container from '../../styles/Container';

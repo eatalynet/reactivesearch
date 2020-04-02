@@ -33,7 +33,7 @@
 
 <script>
 import './styles/airbnb.css';
-import { initReactivesearch, DataSearch, ReactiveList } from '@appbaseio/reactivesearch-vue';
+import { initReactivesearch, DataSearch, ReactiveList } from '@eatalynet/reactivesearch-vue';
 
 const components = {
 	settings: {

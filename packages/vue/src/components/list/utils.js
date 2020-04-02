@@ -1,4 +1,4 @@
-import { helper } from '@appbaseio/reactivecore';
+import { helper } from '@eatalynet/reactivecore';
 
 const { getAggsOrder } = helper;
 

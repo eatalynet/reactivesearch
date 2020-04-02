@@ -1,6 +1,6 @@
 import VueTypes from 'vue-types';
 import NoSSR from 'vue-no-ssr';
-import { Actions, helper } from '@appbaseio/reactivecore';
+import { Actions, helper } from '@eatalynet/reactivecore';
 import Container from '../../styles/Container';
 import { connect } from '../../utils/index';
 import Title from '../../styles/Title';

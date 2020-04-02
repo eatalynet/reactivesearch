@@ -1,8 +1,8 @@
-import { validProps } from '@appbaseio/reactivecore/lib/utils/constants';
+import { validProps } from '@eatalynet/reactivecore/lib/utils/constants';
 import connectToStore from './connector';
 
 // TODO
-// import { storeKey } from '@appbaseio/reactivecore';
+// import { storeKey } from '@eatalynet/reactivecore';
 
 export const connect = (...args) => connectToStore(...args);
 // connectToStore(...args, null, {

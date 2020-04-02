@@ -1,4 +1,4 @@
-import { helper } from '@appbaseio/reactivecore';
+import { helper } from '@eatalynet/reactivecore';
 import VueTypes from 'vue-types';
 import { connect } from '../../utils/index';
 

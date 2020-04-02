@@ -1,6 +1,6 @@
-import configureStore from '@appbaseio/reactivecore';
-import { isEqual } from '@appbaseio/reactivecore/lib/utils/helper';
-import { updateAnalyticsConfig } from '@appbaseio/reactivecore/lib/actions/analytics';
+import configureStore from '@eatalynet/reactivecore';
+import { isEqual } from '@eatalynet/reactivecore/lib/utils/helper';
+import { updateAnalyticsConfig } from '@eatalynet/reactivecore/lib/actions/analytics';
 import VueTypes from 'vue-types';
 import Appbase from 'appbase-js';
 import 'url-search-params-polyfill';

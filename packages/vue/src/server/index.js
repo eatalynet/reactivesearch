@@ -1,5 +1,5 @@
 import Appbase from 'appbase-js';
-import { helper, Reducers } from '@appbaseio/reactivecore';
+import { helper, Reducers } from '@eatalynet/reactivecore';
 
 const { buildQuery, pushToAndClause } = helper;
 const { valueReducer, queryReducer, queryOptionsReducer, dependencyTreeReducer } = Reducers;

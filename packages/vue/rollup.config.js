@@ -76,7 +76,7 @@ export default {
 					'../../node_modules/**',
 					'/node_modules/**',
 					/node_modules\/cross-fetch/,
-					/node_modules\/@appbaseio\/reactivecore/,
+					/node_modules\/@eatalynet\/reactivecore/,
 				],
 				namedExports: {
 					'../../node_modules/highlight-words-core/dist/index.js': ['findAll'],
