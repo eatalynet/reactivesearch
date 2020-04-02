@@ -55,7 +55,10 @@ const ReactiveList = {
 
 		this.__state = {
 			from: $currentPage * props.size,
+			fromNext: $currentPage * props.size,
 			isLoading: true,
+			isLoadingPrev: false, // Only for continuous pagination
+			isLoadingNext: false, // Only for continuous pagination
 			$currentPage,
 		};
 		return this.__state;
@@ -63,6 +66,7 @@ const ReactiveList = {
 	created() {
 		// no support for pagination and aggregationField together
 		if (this.pagination && this.aggregationField) {
+			// TODO: verify if aggregationField is not compliant also with continuous pagination
 			console.warn(
 				'Pagination is not supported when aggregationField is present. The list will be rendered with infinite scroll',
 			);
@@ -70,10 +74,22 @@ const ReactiveList = {
 		if (this.defaultPage >= 0) {
 			this.$currentPage = this.defaultPage;
 			this.from = this.$currentPage * this.$props.size;
+			this.fromNext = this.from;
 		}
 		this.isLoading = true;
 		this.internalComponent = `${this.$props.componentId}__internal`;
 		const onQueryChange = (...args) => {
+			const [oldQuery, newQuery] = args;
+			if (
+				this.isContinuousPagination && oldQuery && newQuery
+				&& !isEqual(oldQuery.query, newQuery.query)
+			) {
+				// Query has changed (i.e. applied some filter to another component), reset to first page.
+				// N.B. from in Redux state is already reset to 0 at mount, anyway here is too late to
+				// update it via setQueryOptions(). The other approach is to set newQuery.from directly
+				// here, but quite dirty, query args here should be read-only.
+				this.resetToFirstPage();
+			}
 			this.$emit('queryChange', ...args);
 		};
 		const onError = e => {
@@ -100,7 +116,7 @@ const ReactiveList = {
 		renderError: types.title,
 		renderResultStats: types.func,
 		pages: VueTypes.number.def(5),
-		pagination: VueTypes.bool.def(false),
+		pagination: types.pagination.def(false),
 		paginationAt: types.paginationAt.def('bottom'),
 		react: types.react,
 		showResultStats: VueTypes.bool.def(true),
@@ -110,10 +126,14 @@ const ReactiveList = {
 		sortOptions: types.sortOptions,
 		stream: types.bool,
 		URLParams: VueTypes.bool.def(false),
+		URLPageParam: types.string.def(''), // N.B. DO NOT works with SSR!!! Is overwritten by initReactivesearch()
 	},
 	computed: {
 		shouldRenderPagination() {
-			return this.pagination && !this.aggregationField;
+			return this.pagination && !this.aggregationField && !this.isContinuousPagination;
+		},
+		isContinuousPagination() {
+			return this.pagination === 'continuous';
 		},
 		totalPages() {
 			return Math.ceil(this.total / this.$props.size) || 0;
@@ -135,6 +155,14 @@ const ReactiveList = {
 		},
 		hasCustomRender() {
 			return hasCustomRenderer(this);
+		},
+		continuousShowLoadPrev() {
+			// TODO: test isLoading instead of hits?
+			return this.hits && this.from > 0;
+		},
+		continuousShowLoadNext() {
+			// TODO: test isLoading instead of hits?
+			return this.hits && this.$data.fromNext + this.$props.size <= this.total;
 		},
 	},
 	watch: {
@@ -169,7 +197,7 @@ const ReactiveList = {
 			}
 		},
 		defaultQuery(newVal, oldVal) {
-			if (newVal && !isEqual(newVal(), oldVal)) {
+			if (newVal && !isEqual(newVal(), oldVal())) {
 				let options = getQueryOptions(this.$props);
 				options.from = 0;
 				this.$defaultQuery = newVal();
@@ -244,7 +272,9 @@ const ReactiveList = {
 				if (oldVal.length !== newVal.length || newVal.length === this.$props.total) {
 					this.isLoading = false;
 
-					if (newVal.length < oldVal.length) {
+					// Continuous pagination bypass this part! Purpose is not clear,
+					// "integrated" scroll not wanted and page reset on query changed already managed.
+					if (!this.isContinuousPagination && newVal.length < oldVal.length) {
 						// query has changed
 						window.scrollTo(0, 0);
 						this.from = 0;
@@ -252,6 +282,22 @@ const ReactiveList = {
 				}
 			} else if ((!oldVal || !oldVal.length) && newVal) {
 				this.isLoading = false;
+			}
+			// Continuous pagination
+			if (
+				this.isContinuousPagination && oldVal && oldVal.length && newVal && newVal.length
+				&& (this.isLoadingPrev || this.isLoadingNext)
+			) {
+				// TODO: maybe is better/safer to compare [0]._id?
+				const direction = oldVal[0] === newVal[0] ? 'next' : 'prev';
+				// Reset isLoadingPrev/Next
+				this[direction === 'next' ? 'isLoadingNext' : 'isLoadingPrev'] = false;
+				// Emit pageAdd, use $nextTick so DOM is already updated
+				const fromDirection = this[direction === 'next' ? 'fromNext' : 'from'];
+				const lastAddedPage = Math.ceil(fromDirection / this.$props.size) + 1;
+				this.$nextTick(function() {
+					this.$emit('pageAdd', direction, lastAddedPage, this.totalPages);
+				});
 			}
 		},
 		total(newVal, oldVal) {
@@ -354,7 +400,14 @@ const ReactiveList = {
 
 		this.setReact(this.$props);
 
-		if (!this.shouldRenderPagination) {
+		// Reset from in Redux to 0, so a query change can reset pagination (see onQueryChange() above)
+		this.setQueryOptions(
+			this.$props.componentId,
+			{ ...options, ...this.getAggsQuery(), from: 0 },
+			false,
+		);
+
+		if (!this.shouldRenderPagination && !this.isContinuousPagination) {
 			window.addEventListener('scroll', this.scrollHandler);
 		}
 
@@ -413,6 +466,17 @@ const ReactiveList = {
 							innerClass={this.$props.innerClass}
 						/>
 					) : null}
+
+				{this.isContinuousPagination ? (
+					this.continuousShowLoadPrev ? (
+						this.$scopedSlots.loadPrev
+							? this.$scopedSlots.loadPrev({ load: this.continuousLoadPrev, isLoading: this.isLoadingPrev })
+							: <button onClick={this.continuousLoadPrev} disabled={this.isLoadingPrev}>
+								{this.isLoadingPrev ? 'loading...' : 'prev'}
+							</button>
+					) : (this.$scopedSlots.firstPageLoadAlt ? this.$scopedSlots.firstPageLoadAlt() : null)
+				) : null}
+
 				{this.hasCustomRender ? (
 					this.getComponent()
 				) : (
@@ -455,6 +519,16 @@ const ReactiveList = {
 							innerClass={this.$props.innerClass}
 						/>
 					) : null}
+
+				{this.isContinuousPagination && this.continuousShowLoadNext ? (
+					this.$scopedSlots.loadNext
+						? this.$scopedSlots.loadNext({ load: this.continuousLoadNext, isLoading: this.isLoadingNext })
+						: <button onClick={this.continuousLoadNext} disabled={this.isLoadingNext}>
+							{this.isLoadingNext ? 'loading...' : 'next'}
+						</button>
+				) : null}
+
+
 				{this.config.url.endsWith('appbase.io') && results.length ? (
 					<Flex
 						direction="row-reverse"
@@ -558,6 +632,69 @@ const ReactiveList = {
 				this.isLoading = false;
 			}
 		},
+
+		// Quite redundant with loadMore(), but kept separate for smoother update/merge
+		continuousLoadMore(direction = 'next') {
+			if (!this.isContinuousPagination || (this.aggregationField && !this.afterKey)) return;
+			const loadingName = direction === 'next' ? 'isLoadingNext' : 'isLoadingPrev';
+			if (this.hits && !this.shouldRenderPagination && (
+				(direction === 'next' && this.continuousShowLoadNext) ||
+				(direction !== 'next' && this.continuousShowLoadPrev)
+			)) {
+				const value = direction === 'next'
+					? this.$data.fromNext + this.$props.size
+					: this.$data.from - this.$props.size;
+				const options = { ...getQueryOptions(this.$props), ...this.getAggsQuery() };
+				this[direction === 'next' ? 'fromNext' : 'from'] = value;
+				this[loadingName] = true;
+				this.loadMoreAction(
+					this.$props.componentId,
+					{
+						...options,
+						from: value,
+					},
+					direction === 'next', // append
+					!!this.aggregationField,
+					direction !== 'next', // prepend
+				);
+				// Set page in URL (TODO: move on hits change?)
+				if (this.$props.URLParams && direction === 'next') {
+					this.setPageURL(
+						this.$props.URLPageParam || this.$props.componentId,
+						Math.ceil(value / this.$props.size) + 1,
+						this.$props.URLPageParam || this.$props.componentId,
+						false,
+						true,
+					);
+				}
+
+			} else if (this[loadingName]) {
+				this[loadingName] = false;
+			}
+		},
+
+		continuousLoadPrev() {
+			this.continuousLoadMore('prev');
+		},
+
+		continuousLoadNext() {
+			this.continuousLoadMore('next');
+		},
+
+		resetToFirstPage() {
+			this.$currentPage = 0;
+			this.from = this.$currentPage * this.$props.size;
+			this.fromNext = this.from;
+			this.setPageURL(
+				this.$props.URLPageParam || this.$props.componentId,
+				null,
+				this.$props.URLPageParam || this.$props.componentId,
+				false,
+				true,
+			);
+			this.$emit('resetToFirstPage');
+		},
+
 		setPage(page) {
 			// pageClick will be called every time a pagination button is clicked
 			if (page !== this.$currentPage) {
@@ -579,9 +716,9 @@ const ReactiveList = {
 
 				if (this.$props.URLParams) {
 					this.setPageURL(
-						this.$props.componentId,
+						this.$props.URLPageParam || this.$props.componentId,
 						page + 1,
-						this.$props.componentId,
+						this.$props.URLPageParam || this.$props.componentId,
 						false,
 						true,
 					);
@@ -742,8 +879,8 @@ const ReactiveList = {
 };
 const mapStateToProps = (state, props) => ({
 	defaultPage:
-		(state.selectedValues[props.componentId]
-			&& state.selectedValues[props.componentId].value - 1)
+		(state.selectedValues[props.URLPageParam || props.componentId]
+			&& state.selectedValues[props.URLPageParam || props.componentId].value - 1)
 		|| -1,
 	hits: state.hits[props.componentId] && state.hits[props.componentId].hits,
 	aggregationData: state.compositeAggregations[props.componentId] || [],
