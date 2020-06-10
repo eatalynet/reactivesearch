@@ -196,38 +196,6 @@ const ReactiveList = {
 				this.updateQueryOptions(this.$props);
 			}
 		},
-		defaultQuery(newVal, oldVal) {
-			if (newVal && !isEqual(newVal(), oldVal())) {
-				let options = getQueryOptions(this.$props);
-				options.from = 0;
-				this.$defaultQuery = newVal();
-				const { sort, ...query } = this.$defaultQuery;
-
-				if (sort) {
-					options.sort = this.$defaultQuery.sort;
-				}
-				const queryOptions = getOptionsFromQuery(this.$defaultQuery);
-				if (queryOptions) {
-					options = { ...options, ...getOptionsFromQuery(this.$defaultQuery) };
-				}
-				this.setQueryOptions(
-					this.$props.componentId,
-					{ ...options, ...this.getAggsQuery() },
-					!query,
-				);
-
-				this.updateQuery(
-					{
-						componentId: this.internalComponent,
-						query,
-					},
-					true,
-				); // reset page because of query change
-
-				this.$currentPage = 0;
-				this.from = 0;
-			}
-		},
 		stream(newVal, oldVal) {
 			if (oldVal !== newVal) {
 				this.setStreaming(this.$props.componentId, newVal);
@@ -418,6 +386,43 @@ const ReactiveList = {
 				this.updateComponentProps(this.componentId, this.$props);
 			});
 		});
+		// N.B. Watcher on defaultQuery works properly only in this way.
+		// Being a function, can't be compared old VS new return value in "classic" watcher definition.
+		this.$watch(
+			() => typeof this.$props.defaultQuery === 'function' ? this.$props.defaultQuery() : null,
+			(newVal, oldVal) => {
+				if (newVal && !isEqual(newVal, oldVal)) {
+					let options = getQueryOptions(this.$props);
+					options.from = 0;
+					this.$defaultQuery = newVal;
+					const { sort, ...query } = this.$defaultQuery;
+
+					if (sort) {
+						options.sort = this.$defaultQuery.sort;
+					}
+					const queryOptions = getOptionsFromQuery(this.$defaultQuery);
+					if (queryOptions) {
+						options = { ...options, ...getOptionsFromQuery(this.$defaultQuery) };
+					}
+					this.setQueryOptions(
+						this.$props.componentId,
+						{ ...options, ...this.getAggsQuery() },
+						!query,
+					);
+
+					this.updateQuery(
+						{
+							componentId: this.internalComponent,
+							query,
+						},
+						true,
+					); // reset page because of query change
+
+					this.$currentPage = 0;
+					this.from = 0;
+				}
+			},
+		);
 	},
 
 	beforeDestroy() {
