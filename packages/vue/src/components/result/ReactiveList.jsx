@@ -88,7 +88,7 @@ const ReactiveList = {
 				// N.B. from in Redux state is already reset to 0 at mount, anyway here is too late to
 				// update it via setQueryOptions(). The other approach is to set newQuery.from directly
 				// here, but quite dirty, query args here should be read-only.
-				this.resetToFirstPage();
+				this.resetPageOnQueryChange && this.resetToFirstPage();
 			}
 			this.$emit('queryChange', ...args);
 		};
@@ -127,6 +127,7 @@ const ReactiveList = {
 		stream: types.bool,
 		URLParams: VueTypes.bool.def(false),
 		URLPageParam: types.string.def(''), // N.B. DO NOT works with SSR!!! Is overwritten by initReactivesearch()
+		resetPageOnQueryChange: VueTypes.bool.def(true),
 	},
 	computed: {
 		shouldRenderPagination() {
