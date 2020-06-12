@@ -1,6 +1,6 @@
 {
 	"name": "@eatalynet/reactivesearch-vue",
-	"version": "1.1.1-4",
+	"version": "1.1.1-5",
 	"private": false,
 	"main": "dist/@appbaseio/reactivesearch-vue.cjs.js",
 	"jsnext:main": "dist/@appbaseio/reactivesearch-vue.es.js",
