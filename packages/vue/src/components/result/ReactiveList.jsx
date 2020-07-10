@@ -163,7 +163,7 @@ const ReactiveList = {
 		},
 		continuousShowLoadNext() {
 			// TODO: test isLoading instead of hits?
-			return this.hits && this.$data.fromNext + this.$props.size <= this.total;
+			return this.hits && this.$data.fromNext + this.$props.size < this.total;
 		},
 	},
 	watch: {
