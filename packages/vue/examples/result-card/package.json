@@ -9,7 +9,7 @@
 	},
 	"dependencies": {
 		"vue": "^2.5.17",
-		"@eatalynet/reactivesearch-vue": "1.1.1-5"
+		"@eatalynet/reactivesearch-vue": "1.1.1-6"
 	},
 	"devDependencies": {
 		"@vue/cli-plugin-babel": "^3.0.4",
