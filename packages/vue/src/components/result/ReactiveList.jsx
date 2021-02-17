@@ -162,8 +162,10 @@ const ReactiveList = {
 			return this.hits && this.from > 0;
 		},
 		continuousShowLoadNext() {
+			// N.B. this.total in an object in SSR but a numeric value on client!?!? Need this fix for handle load next slot in SSR
+			const total = typeof this.total === 'object' ? this.total.value : this.total;
 			// TODO: test isLoading instead of hits?
-			return this.hits && this.$data.fromNext + this.$props.size < this.total;
+			return this.hits && this.$data.fromNext + this.$props.size < total;
 		},
 	},
 	watch: {
